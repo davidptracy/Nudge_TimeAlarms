@@ -1,10 +1,5 @@
-/* This example uses time from the Choronodot http://www.adafruit.com/products/255  a RTC (Real Time Clock). TimeAlarm can be used to trigger alarms. It is a useful way
-to schedule interactions without the need for network connectivity. The clock,  being battery powered, is not affected by power cycles on the arduino, scheduled
-interactions occur at the defined time.
-The TimeAlarm portion of the example is unaltered. the orginal code, and Time library installation instructions
-in can be found here. http://www.pjrc.com/teensy/td_libs_TimeAlarms.html  */
-
-
+/*SET TIME FROM LINUX CLOCK ON ARDUINO YUN
+DAVID TRACY || github.com/davidptracy */
 
 #include <Process.h>
 #include <Time.h>
@@ -12,11 +7,9 @@ in can be found here. http://www.pjrc.com/teensy/td_libs_TimeAlarms.html  */
 
 
 String curDateTime = "";
-String curYear, curHour, curMin, curSec;
 
 void setup() {
-  Serial.begin(9600);
-  //    setSyncProvider(RTC.get);   // the function to get the time from the RTC
+  Serial.begin(9600); 
 
   while (!Serial);     // do nothing until the serial monitor is opened
   Bridge.begin();  // make contact with the linux processor
@@ -33,45 +26,50 @@ void setup() {
   Process checkTime;  // initialize a new process
   checkTime.runShellCommand("date \"+%FT%T\"");  // command you want to run
 
-  // while there's any characters coming back from the process, print them to the serial monitor:
+  // THIS IS CASTING THE SERIAL READ FROM THE SHELL COMMAND INTO A STRING THAT WE CAN PARSE
   while (checkTime.available() > 0) {
     char c = checkTime.read();
     curDateTime.concat(c);
   }
+  
+  //THIS IS SETTING UP THE RULES TO PARSE THE STRING
 
   int firstDash = curDateTime.indexOf("-");
   int secondDash = curDateTime.lastIndexOf("-");
   int indexOfT = curDateTime.indexOf("T");
   int firstColon = curDateTime.indexOf(":");
   int secondColon = curDateTime.lastIndexOf(":");
+  
+  //THIS IS SPLITTING THE curDateTime STRING INTO DIGESTABLE CHUNKS AND CONVERTING THEM TO INTS
 
-  String yearString = curDateTime.substring(0, firstDash);
-  String monthString = curDateTime.substring(firstDash + 1, secondDash);
-  String dayString = curDateTime.substring(secondDash + 1, indexOfT);
-  String hourString = curDateTime.substring(indexOfT + 1, firstColon);
-  String minString = curDateTime.substring(firstColon + 1, secondColon);
-  String secString = curDateTime.substring(secondColon + 1, curDateTime.length()-1);
+  int curYear = curDateTime.substring(0, firstDash).toInt();
+  int curMonth = curDateTime.substring(firstDash + 1, secondDash).toInt();
+  int curDay = curDateTime.substring(secondDash + 1, indexOfT).toInt();
+  int curHour = curDateTime.substring(indexOfT + 1, firstColon).toInt();
+  int curMin = curDateTime.substring(firstColon + 1, secondColon).toInt();
+  int curSec = curDateTime.substring(secondColon + 1, curDateTime.length() - 1).toInt();
 
-  Serial.println(yearString);
-  Serial.println(monthString);
-  Serial.println(dayString);
-  Serial.println(hourString);
-  Serial.println(minString);
-  Serial.println(secString);
+  //PRINT THE INTS FOR DEBUGGING 
+  Serial.println(curYear);
+  Serial.println(curMonth);
+  Serial.println(curDay);
+  Serial.println(curHour);
+  Serial.println(curMin);
+  Serial.println(curSec);
+  
+  //THIS IS USING THE INTS TO SET THE TIME FOR USE WITH ALARMS
+  setTime(curHour, curMin, curSec, curDay, curMonth, curYear);
 
-  //  setTime(c);
-
-
-  //  if (timeStatus() != timeSet)
-  //    Serial.println("Unable to sync with the RTC");
-  //  else
-  //    Serial.println("RTC has set the system time");
+  if (timeStatus() != timeSet)
+    Serial.println("Yun time is not synced");
+  else
+    Serial.println("Yun time is synced");
 
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  //  digitalClockDisplay();
+  digitalClockDisplay();
   Alarm.delay(1000); // wait one second between clock display
   //Serial.println(curDateTime);
   //Serial.println(curYear);
